@@ -256,7 +256,8 @@ def main(
     """Save predictions."""
 
     for i, name in enumerate(["train", "valid", "test"]):
-        output_df = generate_output_dataframe(data1[i])
+        print(f"data1[{i}]: {data1[i]}")
+        output_df = generate_output_dataframe(data1[i][0])
         if verbose: print(f"Output dataframe: {output_df}")
         filepath = model_dir / f"phosphosite_predictions_{name}.csv"
         if verbose: print(f"Saving to {filepath} ...")
