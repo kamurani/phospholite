@@ -267,13 +267,14 @@ class PhosphoGAT(pl.LightningModule):
         batch_idx = batch.batch 
         batch_idx = batch_idx[y_index]          # Select the batch_idx for each y value (indexing with `y_index`)
 
-        
-        if isinstance(batch.name, torch.Tensor):
+        names = batch.name
+        if isinstance(names, torch.Tensor):
             # detach 
-            ids = batch.name.detach().cpu().numpy()
+            ids = names.detach().cpu().numpy()
             uniprot_ids = ids[batch_idx].tolist()
-        elif isinstance(batch.name, list):
-            ids = np.array(batch.name)
+        elif isinstance(names, list):
+            ids = np.array(names)
+            batch_idx = batch_idx.detach().cpu().numpy()
             uniprot_ids = ids[batch_idx].tolist()
         else: 
             raise ValueError(f"batch.name is of type {type(batch.name)}") 
