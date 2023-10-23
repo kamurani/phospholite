@@ -177,8 +177,12 @@ def main(
     if verbose: print(f"Using {len(processed_filenames)} processed files.")
 
 
-    
+    with open(DATASET_DIR / "naked_proteins.txt", "r") as f:
+        naked_proteins = f.read().splitlines()
+        if verbose: print(f"Ignoring {len(naked_proteins)} naked proteins.")
+
     indexes_dict = load_index_dict(filepath=INDEX_DICT_PATH)
+
 
     kwargs = dict(
         root=root_dir,
@@ -188,7 +192,13 @@ def main(
         pre_transform=None, # before saved to disk , after PyG conversion 
         pre_filter=None,    # whether it will be in final dataset
     )
+    uniprot_ids_to_use = processed_filenames
     uniprot_ids_to_use = [u for u in processed_filenames if u in indexes_dict.keys()]
+
+    # Filter naked proteins (i.e. no sites on them)
+    uniprot_ids_to_use = [u for u in uniprot_ids_to_use if u not in naked_proteins]
+    
+    if verbose: print(f"Using {len(uniprot_ids_to_use)} uniprot ids.")
     ds = PhosphositeGraphDataset(
         uniprot_ids=uniprot_ids_to_use,
         y_label_map=indexes_dict,

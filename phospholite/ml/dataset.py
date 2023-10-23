@@ -253,12 +253,17 @@ class PhosphositeGraphDataset(Dataset):
         :type idx: int
         :return: PyTorch Geometric Data object.
         """
-        uniprot_id = self.uniprot_ids[idx]
+        if isinstance(idx, str):
+            # assume uniprot_id 
+            uniprot_id = idx
+        else:
+            uniprot_id = self.uniprot_ids[idx]
         data = torch.load(
             os.path.join(self.processed_dir, f"{uniprot_id}.pt")
         )
+        assert isinstance(data, Data), f"{uniprot_id}: Data is not a PyTorch Geometric Data object. Got {type(data)}."
         assert uniprot_id == data.name, f"Uniprot ID '{uniprot_id}' does not match data.name '{data.name}' at index {idx}."
-
+        
         data.y_index    = self.y_label_map[uniprot_id]["idx"]
         data.y          = self.y_label_map[uniprot_id]["y"]
 
