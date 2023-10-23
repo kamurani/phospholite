@@ -92,6 +92,12 @@ np.random.seed(0)
     default=True,
     help="Print more output.",
 )
+@ck.option(
+    "--num-workers",
+    "-w",
+    default=0,
+    help="Number of workers to use for dataloader.",
+)
 def main(
     root_dir: str = "",
     model_dir: str = "",
@@ -100,7 +106,7 @@ def main(
     epochs: int = 200, 
     dryrun: bool = False,
     verbose: bool = False,
-
+    num_workers: int = 0,
 ):
     root_dir = Path(root_dir)
     model_dir = Path(model_dir)
@@ -187,7 +193,8 @@ def main(
     if verbose: print(ds)
 
     train_loader, valid_loader, test_loader = get_dataloader_split(
-        ds, batch_size=32, train_batch_size=32
+        ds, batch_size=32, train_batch_size=32,
+        num_workers=num_workers,
     )
     if verbose: print(train_loader, valid_loader, test_loader)
 
