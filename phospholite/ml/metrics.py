@@ -2,7 +2,9 @@ import torch
 
 from sklearn.metrics import f1_score 
 from torchmetrics import Accuracy
-accuracy = Accuracy(task="binary")
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+accuracy = Accuracy(task="binary").to(device)
 
 def calculate_masked_accuracy(
     input: torch.Tensor,
