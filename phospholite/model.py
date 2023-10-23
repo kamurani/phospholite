@@ -278,7 +278,9 @@ class PhosphoGAT(pl.LightningModule):
             uniprot_ids = ids[batch_idx].tolist()
         else: 
             raise ValueError(f"batch.name is of type {type(batch.name)}") 
-
+        
+        y_index = y_index.detach().cpu().numpy()
+        
         node_id_flat = np.array([item for sublist in batch.node_id for item in sublist], dtype=str)
         node_ids = node_id_flat[y_index].tolist()
 
