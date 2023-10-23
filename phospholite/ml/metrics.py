@@ -9,7 +9,7 @@ accuracy = Accuracy(task="binary").to(device)
 def calculate_masked_accuracy(
     input: torch.Tensor,
     target: torch.Tensor,
-    mask: torch.Tensor,
+    mask: torch.Tensor = None,
 ) -> torch.Tensor:
     """
     Calculate the accuracy of the model's predictions.
@@ -37,16 +37,19 @@ def calculate_masked_accuracy(
     # Detach and copy to cpu 
     input = input.detach().cpu()
     target = target.detach().cpu()
-    mask = mask.detach().cpu()
-
-    mask_idx = torch.where(mask == 1)
-    acc = accuracy(input[mask_idx], target[mask_idx])
+    if mask is not None:
+        mask = mask.detach().cpu() 
+        mask_idx = torch.where(mask == 1)
+        input = input[mask_idx]
+        target = target[mask_idx]
+    
+    acc = accuracy(input, target)
     return acc
     
 def calculate_masked_f1(
     input: torch.Tensor,
     target: torch.Tensor,
-    mask: torch.Tensor,
+    mask: torch.Tensor = None,
     **kwargs,
 ) -> float:
     """
@@ -75,18 +78,20 @@ def calculate_masked_f1(
     # Detach 
     input = input.detach().cpu()
     target = target.detach().cpu()
-    mask = mask.detach().cpu()
-    
-    y_pred =  (input > 0.5).int()
-    indexes = torch.nonzero(mask, as_tuple=True)[0] 
+
+    y_pred = (input > 0.5).int()
 
     def get_masked(tensor):
         tensor = tensor[indexes]
         return tensor.detach().cpu().numpy()
     
-    y        = get_masked(target)
-    y_pred   = get_masked(y_pred) 
-    return f1_score(y, y_pred, **kwargs)
+    if mask is not None:
+        mask = mask.detach().cpu()
+        indexes = torch.nonzero(mask, as_tuple=True)[0] 
+        target        = get_masked(target)
+        y_pred   = get_masked(y_pred) 
+
+    return f1_score(target, y_pred, **kwargs)
 
 
 

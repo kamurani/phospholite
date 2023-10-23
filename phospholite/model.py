@@ -181,15 +181,12 @@ class PhosphoGAT(pl.LightningModule):
         y_sparse = torch.flatten(y_sparse)
         y_index = torch.flatten(y_index)
 
-        # Use `y_index` to create mask 
-        mask = torch.zeros_like(y_hat)
-        mask[y_index] = 1
-        y = torch.zeros_like(y_hat)
-        y[y_index] = y_sparse
+        # Use `y_index` to only select the values that are in the mask
+        y_hat = y_hat[y_index]
 
 
-        loss = self.loss_func(y_hat, y, mask)
-        acc = self.accuracy(y_hat, y, mask)
+        loss = self.loss_func(y_hat, y_sparse)
+        acc = self.accuracy(y_hat, y_sparse)
         self.log("train_loss", loss, prog_bar=self.prog_bar)
         self.log("train_acc", acc, prog_bar=self.prog_bar)
         return loss
@@ -280,7 +277,7 @@ class PhosphoGAT(pl.LightningModule):
             raise ValueError(f"batch.name is of type {type(batch.name)}") 
         
         y_index = y_index.detach().cpu().numpy()
-        
+
         node_id_flat = np.array([item for sublist in batch.node_id for item in sublist], dtype=str)
         node_ids = node_id_flat[y_index].tolist()
 
@@ -300,3 +297,6 @@ class PhosphoGAT(pl.LightningModule):
             lr_scheduler=scheduler,
             monitor="train_loss",
         )
+
+
+

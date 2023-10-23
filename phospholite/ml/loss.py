@@ -9,7 +9,7 @@ class MaskedMSELoss(torch.nn.Module):
         self,
         input, 
         target,
-        mask,
+        mask = None,
     ):
         diff2 = (torch.flatten(input) - torch.flatten(target)) ** 2.0 * torch.flatten(mask)
         result = torch.sum(diff2) / torch.sum(mask)
@@ -31,14 +31,15 @@ class MaskedBinaryCrossEntropy(torch.nn.Module):
         self,
         input, 
         target,
-        mask,
+        mask = None,
     ):
+        weights = torch.flatten(mask) if mask is not None else None
         if self.subtype == "bce":
             
             loss = torch.nn.functional.binary_cross_entropy(
                 input=torch.flatten(input),
                 target=torch.flatten(target),
-                weight=torch.flatten(mask),
+                weight=weights,
                 reduction="none",
             )
 
@@ -47,7 +48,7 @@ class MaskedBinaryCrossEntropy(torch.nn.Module):
             loss = torch.nn.functional.binary_cross_entropy_with_logits(
                 input=torch.flatten(input),
                 target=torch.flatten(target),
-                weight=torch.flatten(mask),
+                weight=weights,
                 reduction="none",
             )
 
