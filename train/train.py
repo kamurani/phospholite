@@ -9,6 +9,9 @@ import click as ck
 import glob
 import re
 import time
+
+import os
+os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
 import torch 
 import numpy as np
 import pandas as pd
