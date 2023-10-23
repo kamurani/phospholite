@@ -15,17 +15,15 @@ from typing import Callable, List, Tuple, Union, Optional
 from torchmetrics import Accuracy
 accuracy = Accuracy(task="binary")
 
-from phosphosite.ml import calculate_masked_accuracy, calculate_masked_f1
+from phospholite.ml import calculate_masked_accuracy, calculate_masked_f1
 
 
 # import metrics from torch
 #from torchmetrics import Accuracy, Precision, Recall, F1, AUROC, ConfusionMatrix
 
 
-from phosphosite.model.defaults import (
-    SEQUENCE_EMBEDDING_SIZE,
-)
-from phosphosite.ml import MaskedBinaryCrossEntropy, MaskedMSELoss
+SEQUENCE_EMBEDDING_SIZE = 1024
+from phospholite.ml import MaskedBinaryCrossEntropy, MaskedMSELoss
 
 
 
