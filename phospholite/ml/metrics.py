@@ -33,6 +33,12 @@ def calculate_masked_accuracy(
 
     """
     # Get indexes where mask is 1.0
+
+    # Detach and copy to cpu 
+    input = input.detach().cpu()
+    target = target.detach().cpu()
+    mask = mask.detach().cpu()
+
     mask_idx = torch.where(mask == 1)
     acc = accuracy(input[mask_idx], target[mask_idx])
     return acc
@@ -66,6 +72,11 @@ def calculate_masked_f1(
         The F1 score.
 
     """
+    # Detach 
+    input = input.detach().cpu()
+    target = target.detach().cpu()
+    mask = mask.detach().cpu()
+    
     y_pred =  (input > 0.5).int()
     indexes = torch.nonzero(mask, as_tuple=True)[0] 
 
