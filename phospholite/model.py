@@ -183,19 +183,6 @@ class PhosphoGAT(pl.LightningModule):
 
         # Use `y_index` to only select the values that are in the mask
 
-        # Write to file 
-        with open("y_hat.txt", "w") as f:
-            f.write(str(y_hat))
-        
-        with open("y_sparse.txt", "w") as f:
-            f.write(str(y_sparse))
-        
-        with open("y_index.txt", "w") as f:
-            f.write(str(y_index))
-        
-        with open("names.txt", "w") as f:
-            f.write(str(x.name))
-
         y_hat = y_hat[y_index]
         loss = self.loss_func(y_hat, y_sparse)
         acc = self.accuracy(y_hat, y_sparse)
