@@ -1,3 +1,8 @@
+# PHOSPHOLITE 
+
+dataset/protein_graph_dataset 
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
