@@ -179,14 +179,13 @@ class PhosphoGAT(pl.LightningModule):
         # Flatten 
         y_hat = torch.flatten(y_hat)
         y_sparse = torch.flatten(y_sparse)
-        y_index = torch.flatten(y_index)
+        y_index = torch.flatten(y_index).detach().cpu()
 
         # Use `y_index` to only select the values that are in the mask
         y_hat = y_hat[y_index]
-
-
         loss = self.loss_func(y_hat, y_sparse)
         acc = self.accuracy(y_hat, y_sparse)
+
         self.log("train_loss", loss, prog_bar=self.prog_bar)
         self.log("train_acc", acc, prog_bar=self.prog_bar)
         return loss
@@ -201,15 +200,13 @@ class PhosphoGAT(pl.LightningModule):
         # Flatten 
         y_hat = torch.flatten(y_hat)
         y_sparse = torch.flatten(y_sparse)
-        y_index = torch.flatten(y_index)
-        # Use `y_index` to create mask 
-        mask = torch.zeros_like(y_hat)
-        mask[y_index] = 1
-        y = torch.zeros_like(y_hat)
-        y[y_index] = y_sparse
+        y_index = torch.flatten(y_index).detach().cpu()
 
-        loss = self.loss_func(y_hat, y, mask)
-        acc = self.accuracy(y_hat, y, mask)
+        # Use `y_index` to only select the values that are in the mask
+        y_hat = y_hat[y_index]
+        loss = self.loss_func(y_hat, y_sparse)
+        acc = self.accuracy(y_hat, y_sparse)
+
         self.log("val_loss", loss, prog_bar=self.prog_bar)
         self.log("val_acc", acc, prog_bar=self.prog_bar)
 
@@ -223,24 +220,65 @@ class PhosphoGAT(pl.LightningModule):
         # Flatten 
         y_hat = torch.flatten(y_hat)
         y_sparse = torch.flatten(y_sparse)
-        y_index = torch.flatten(y_index)
-        # Use `y_index` to create mask 
-        mask = torch.zeros_like(y_hat)
-        mask[y_index] = 1
-        y = torch.zeros_like(y_hat)
-        y[y_index] = y_sparse
+        y_index = torch.flatten(y_index).detach().cpu()
 
-        loss = self.loss_func(y_hat, y, mask)
-        acc = self.accuracy(y_hat, y, mask)
+        # Use `y_index` to only select the values that are in the mask
+        y_hat = y_hat[y_index]
+        loss = self.loss_func(y_hat, y_sparse)
+        acc = self.accuracy(y_hat, y_sparse)
 
         # F1 score
-        f1 = calculate_masked_f1(y_hat, y, mask, average="weighted")
+        f1 = calculate_masked_f1(y_hat, y_sparse, average="weighted")
 
         self.log("test_loss", loss, prog_bar=self.prog_bar)
         self.log("test_acc", acc, prog_bar=self.prog_bar)
         self.log("test_f1", f1, prog_bar=self.prog_bar)
 
+    def _predict_step(self, batch, batch_idx, dataloader_idx=0):
+        x = batch 
+        y_sparse = x.y 
+        y_index = x.y_index
+        y_index = y_index.to(torch.long)
+        y_hat = self(x)
+
+        # Flatten 
+        y_hat = torch.flatten(y_hat)
+        y_sparse = torch.flatten(y_sparse)
+        y_index = torch.flatten(y_index).detach().cpu()
+
+        # Use `y_index` to only select the values that are in the mask
+        y_hat = y_hat[y_index]
+
+        batch_idx = batch.batch.detach().cpu()
+        batch_idx = batch_idx[y_index]          # Select the batch_idx for each y value (indexing with `y_index`)
+
+        names = batch.name
+        if isinstance(names, torch.Tensor):
+            # detach 
+            ids = names.detach().cpu().numpy()
+            uniprot_ids = ids[batch_idx].tolist()
+        elif isinstance(names, list):
+            ids = np.array(names)
+            batch_idx = batch_idx.detach().cpu().numpy()
+            uniprot_ids = ids[batch_idx].tolist()
+        else: 
+            raise ValueError(f"batch.name is of type {type(batch.name)}") 
+        
+        y_index = y_index.detach().cpu().numpy()
+
+        node_id_flat = np.array([item for sublist in batch.node_id for item in sublist], dtype=str)
+        node_ids = node_id_flat[y_index].tolist()
+
+        y_values = y_sparse.tolist()
+
+        y_hat = y_hat[y_index]
+        y_hat_values = y_hat.tolist()
+        prediction_values = np.round(y_hat.detach().cpu().numpy()).tolist() # thresholded
+        return list(zip(uniprot_ids, node_ids, y_values, prediction_values, y_hat_values,))
+
+        
     def predict_step(self, batch, batch_idx, dataloader_idx=0):
+
         x = batch 
         y_sparse = x.y 
         y_index = x.y_index
