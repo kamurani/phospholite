@@ -188,8 +188,9 @@ def main(
         pre_transform=None, # before saved to disk , after PyG conversion 
         pre_filter=None,    # whether it will be in final dataset
     )
+    uniprot_ids_to_use = [u for u in processed_filenames if u in indexes_dict.keys()]
     ds = PhosphositeGraphDataset(
-        uniprot_ids=processed_filenames,
+        uniprot_ids=uniprot_ids_to_use,
         y_label_map=indexes_dict,
         **kwargs,
     )
