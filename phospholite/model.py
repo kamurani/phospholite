@@ -1,7 +1,8 @@
 """ML models for predicting phosphorylation sites."""
 
 # pytorch geometric and pytorch lightning
-
+import numpy as np 
+from pytorch_lightning.utilities.types import EVAL_DATALOADERS
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -14,10 +15,17 @@ from typing import Callable, List, Tuple, Union, Optional
 from torchmetrics import Accuracy
 accuracy = Accuracy(task="binary")
 
+from phosphosite.ml import calculate_masked_accuracy, calculate_masked_f1
 
-SEQUENCE_EMBEDDING_SIZE = 1024
 
-from ml import MaskedBinaryCrossEntropy, MaskedMSELoss, calculate_masked_accuracy, calculate_masked_f1
+# import metrics from torch
+#from torchmetrics import Accuracy, Precision, Recall, F1, AUROC, ConfusionMatrix
+
+
+from phosphosite.model.defaults import (
+    SEQUENCE_EMBEDDING_SIZE,
+)
+from phosphosite.ml import MaskedBinaryCrossEntropy, MaskedMSELoss
 
 
 
@@ -165,9 +173,23 @@ class PhosphoGAT(pl.LightningModule):
 
         """
         x = batch 
-        y = x.y 
-        mask = x.mask
+        y_sparse = x.y 
+        y_index = x.y_index
+        y_index = y_index.to(torch.long)
         y_hat = self(x)
+
+        # Flatten 
+        y_hat = torch.flatten(y_hat)
+        y_sparse = torch.flatten(y_sparse)
+        y_index = torch.flatten(y_index)
+
+        # Use `y_index` to create mask 
+        mask = torch.zeros_like(y_hat)
+        mask[y_index] = 1
+        y = torch.zeros_like(y_hat)
+        y[y_index] = y_sparse
+
+
         loss = self.loss_func(y_hat, y, mask)
         acc = self.accuracy(y_hat, y, mask)
         self.log("train_loss", loss, prog_bar=self.prog_bar)
@@ -175,20 +197,44 @@ class PhosphoGAT(pl.LightningModule):
         return loss
 
     def validation_step(self, batch, batch_idx):
-        x = batch
-        y = x.y
-        mask = x.mask
+        x = batch 
+        y_sparse = x.y 
+        y_index = x.y_index
+        y_index = y_index.to(torch.long)
         y_hat = self(x)
+
+        # Flatten 
+        y_hat = torch.flatten(y_hat)
+        y_sparse = torch.flatten(y_sparse)
+        y_index = torch.flatten(y_index)
+        # Use `y_index` to create mask 
+        mask = torch.zeros_like(y_hat)
+        mask[y_index] = 1
+        y = torch.zeros_like(y_hat)
+        y[y_index] = y_sparse
+
         loss = self.loss_func(y_hat, y, mask)
         acc = self.accuracy(y_hat, y, mask)
         self.log("val_loss", loss, prog_bar=self.prog_bar)
         self.log("val_acc", acc, prog_bar=self.prog_bar)
 
     def test_step(self, batch, batch_idx):
-        x = batch
-        y = x.y
-        mask = x.mask
+        x = batch 
+        y_sparse = x.y 
+        y_index = x.y_index
+        y_index = y_index.to(torch.long)
         y_hat = self(x)
+
+        # Flatten 
+        y_hat = torch.flatten(y_hat)
+        y_sparse = torch.flatten(y_sparse)
+        y_index = torch.flatten(y_index)
+        # Use `y_index` to create mask 
+        mask = torch.zeros_like(y_hat)
+        mask[y_index] = 1
+        y = torch.zeros_like(y_hat)
+        y[y_index] = y_sparse
+
         loss = self.loss_func(y_hat, y, mask)
         acc = self.accuracy(y_hat, y, mask)
 
@@ -198,6 +244,43 @@ class PhosphoGAT(pl.LightningModule):
         self.log("test_loss", loss, prog_bar=self.prog_bar)
         self.log("test_acc", acc, prog_bar=self.prog_bar)
         self.log("test_f1", f1, prog_bar=self.prog_bar)
+
+    def predict_step(self, batch, batch_idx, dataloader_idx=0):
+        x = batch 
+        y_sparse = x.y 
+        y_index = x.y_index
+        y_index = y_index.to(torch.long)
+        y_hat = self(x)
+
+        # Flatten 
+        y_hat = torch.flatten(y_hat)
+        y_sparse = torch.flatten(y_sparse)
+        y_index = torch.flatten(y_index)
+
+        # Use `y_index` to create mask 
+        mask = torch.zeros_like(y_hat)
+        mask[y_index] = 1
+        y = torch.zeros_like(y_hat)
+        y[y_index] = y_sparse
+
+        """Index with batch idx and selected y values
+        """
+        
+        batch_idx = batch.batch 
+        batch_idx = batch_idx[y_index]          # Select the batch_idx for each y value (indexing with `y_index`)
+
+        uniprot_ids = np.array(batch.name)[batch_idx].tolist()
+
+        node_id_flat = np.array([item for sublist in batch.node_id for item in sublist], dtype=str)
+        node_ids = node_id_flat[y_index].tolist()
+
+        y_values = y_sparse.tolist()
+
+        y_hat = y_hat[y_index]
+        y_hat_values = y_hat.tolist()
+        prediction_values = np.round(y_hat.detach().numpy()).tolist() # thresholded
+
+        return list(zip(uniprot_ids, node_ids, y_values, prediction_values, y_hat_values,))
 
 
     def configure_optimizers(self):
