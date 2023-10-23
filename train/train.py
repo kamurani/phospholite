@@ -194,7 +194,7 @@ def main(
 
     train_loader, valid_loader, test_loader = get_dataloader_split(
         ds, batch_size=32, train_batch_size=32,
-        num_workers=num_workers,
+        #num_workers=num_workers,
     )
     if verbose: print(train_loader, valid_loader, test_loader)
 
