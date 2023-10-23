@@ -71,7 +71,7 @@ def calculate_masked_f1(
 
     def get_masked(tensor):
         tensor = tensor[indexes]
-        return tensor.detach().numpy()
+        return tensor.detach().cpu().numpy()
     
     y        = get_masked(target)
     y_pred   = get_masked(y_pred) 
