@@ -13,6 +13,8 @@ def get_dataloader_split(
     train_batch_size: int = 32,
     batch_size: int = 32,
     num_workers: int = 0,
+    shuffle: bool = False,
+    drop_last: bool = False,
 ) -> Tuple[DataLoader, DataLoader, DataLoader]:
     """ 
     Splits a dataset into train, valid, test dataloaders.
@@ -50,7 +52,7 @@ def get_dataloader_split(
     train_loader = DataLoader(
         train_dataset, batch_size=train_batch_size, 
         num_workers=num_workers, 
-        shuffle = True, drop_last = True, )
+        shuffle = shuffle, drop_last = drop_last, )
     valid_loader = DataLoader(
         valid_dataset, batch_size=batch_size, num_workers=num_workers) # 32
     test_loader = DataLoader(
