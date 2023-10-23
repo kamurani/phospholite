@@ -20,8 +20,10 @@ class MaskedBinaryCrossEntropy(torch.nn.Module):
     def __init__(
         self, 
         subtype: str = "bce", # or "logits"
+        loss_measure: str = "sum" # "avg"
     ):
         self.subtype = subtype
+        self.loss_measure = loss_measure
         super(MaskedBinaryCrossEntropy, self).__init__()
         
     
@@ -49,5 +51,8 @@ class MaskedBinaryCrossEntropy(torch.nn.Module):
                 reduction="none",
             )
 
-        result = torch.sum(loss) / int(torch.sum(mask))
+        if self.loss_measure == "sum":
+            result = torch.sum(loss)
+        elif self.loss_measure == "avg":
+            result = torch.sum(loss) / int(torch.sum(mask))
         return result
