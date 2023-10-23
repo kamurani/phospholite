@@ -277,9 +277,6 @@ class PhosphoGAT(pl.LightningModule):
         y_hat = y_hat[y_index]
         y_hat_values = y_hat.tolist()
         prediction_values = np.round(y_hat.detach().numpy()).tolist() # thresholded
-
-        print(f"column lengths:")
-        print([len(col) for col in [uniprot_ids, node_ids, y_values, prediction_values, y_hat_values,] ])
         return list(zip(uniprot_ids, node_ids, y_values, prediction_values, y_hat_values,))
 
 
