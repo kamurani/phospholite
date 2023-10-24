@@ -58,6 +58,8 @@ class PhosphoGAT(pl.LightningModule):
 
         prog_bar: bool = True,
 
+        classifier_size: int = 512, 
+
     ) -> None:
         super().__init__()
         self.learning_rate = learning_rate
@@ -110,20 +112,40 @@ class PhosphoGAT(pl.LightningModule):
         """Classification"""
 
         # Several fully connected layers with dropout and selu 
-        self.classifier = nn.Sequential(
-            nn.Linear(out_size, 512),
-            nn.SELU(),
-            nn.Dropout(dropout),
-            nn.Linear(512, 256),
-            nn.SELU(),
-            nn.Dropout(dropout),
-            nn.Linear(256, 128),
-            nn.SELU(),
-            nn.Dropout(dropout),
-            nn.Linear(128, 1),
-            # binary classification i.e. sigmoid
-            nn.Sigmoid(),
-        )
+        if classifier_size == 512:
+            self.classifier = nn.Sequential(
+                nn.Linear(out_size, 512),
+                nn.SELU(),
+                nn.Dropout(dropout),
+                nn.Linear(512, 256),
+                nn.SELU(),
+                nn.Dropout(dropout),
+                nn.Linear(256, 128),
+                nn.SELU(),
+                nn.Dropout(dropout),
+                nn.Linear(128, 1),
+                # binary classification i.e. sigmoid
+                nn.Sigmoid(),
+            )
+        elif classifier_size == 4096:
+            self.classifier = nn.Sequential(
+                nn.Linear(out_size, 4096),
+                nn.SELU(),
+                nn.Dropout(dropout),
+                nn.Linear(4096, 512),
+                nn.SELU(),
+                nn.Dropout(dropout),
+                nn.Linear(512, 256),
+                nn.SELU(),
+                nn.Dropout(dropout),
+
+                nn.Linear(256, 128),
+                nn.SELU(),
+                nn.Dropout(dropout),
+                nn.Linear(128, 1),
+                # binary classification i.e. sigmoid
+                nn.Sigmoid(),
+            )
 
     def forward(
         self, 
