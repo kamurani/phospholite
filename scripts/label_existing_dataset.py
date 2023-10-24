@@ -10,6 +10,10 @@ from typing import Dict, List, Union, Any, Optional, Tuple, Callable
 from pathlib import Path
 from tqdm import tqdm
 
+from phospholite import INDEX_DICT_PATH
+from phospholite.utils.io import load_index_dict
+
+
 def add_labels_to_dataset(
     from_dir: Path,
     to_dir: Path,
@@ -61,6 +65,7 @@ def add_labels_to_dataset(
         torch.save(data, outfile)
 
 
+
 @ck.command()
 @ck.option(
     "--source",
@@ -75,16 +80,26 @@ def add_labels_to_dataset(
     "-d",
     help="Directory to contain labelled dataset.",
 )
+@ck.option(
+    "--index",
+    "-i",
+    "index_path",
+    default=INDEX_DICT_PATH,
+    help="Path to index dictionary.",
+)
 def main(
     source: str,
     dest: str = None,
+    index_path: Path = None, 
 ):
+    index_path = Path(index_path)
     """Label an existing dataset with a dictionary of labels."""
     if dest is None:
         dest = source
     add_labels_to_dataset(
         from_dir=Path(source),
         to_dir=Path(dest),
+        indexes_dict=load_index_dict(index_path),
     )
 
 if __name__ == "__main__":
