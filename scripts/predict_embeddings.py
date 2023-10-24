@@ -78,6 +78,9 @@ def main(
 
     output = trainer.predict(model, dl)
 
+    from phospholite.utils import flatten_predictions
+    output = flatten_predictions(output)
+
 
     emb_array = np.array([o[-1] for o in output])
 
