@@ -76,13 +76,23 @@ def main(
     import pytorch_lightning as pl
     trainer = pl.Trainer()
 
-    test_predictions = trainer.predict(model, dl)
-    df = generate_output_dataframe(preds, columns=["uniprot_id", "site", "label", "embedding"])
+    output = trainer.predict(model, dl)
+
+
+    emb_array = np.array([o[-1] for o in output])
+
+    from phospholite.utils import generate_output_dataframe
+
+    df = generate_output_dataframe(output, columns=["uniprot_id", "site", "label", "embedding"])
 
     model_dir = checkpoint.parent 
     name = checkpoint.stem
-    filepath = model_dir / f"{name}_embeddings.tsv"
+    filepath = model_dir / f"{name}_embedding_data.tsv"
     df.to_csv(filepath, sep="\t", index=False)
+
+    filepath = model_dir / f"{name}_embedding_array.npy"
+    np.save(filepath, emb_array)
+
 
 if __name__ == "__main__":
     main()
