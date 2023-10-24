@@ -1,50 +1,15 @@
 """Label an existing dataset with a dictionary of labels."""
 import click as ck
 import glob
-import re
-import time
-
-import os
-os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
 import torch 
 import numpy as np
-import pandas as pd
-import pytorch_lightning as pl
-from pytorch_lightning.utilities.types import EVAL_DATALOADERS, STEP_OUTPUT
-
-import torch.nn as nn
-import torch.nn.functional as F
-
+import glob
+import torch_geometric
 
 from typing import Dict, List, Union
 from pathlib import Path
-from functools import reduce
-from pytorch_lightning import Trainer
-from torch.utils.data import DataLoader, Dataset
-from pytorch_lightning.callbacks import StochasticWeightAveraging, EarlyStopping, ModelCheckpoint
+from tqdm import tqdm
 
-from phospholite import SAVED_MODEL_DIR, DATASET_DIR
-from phospholite.model import PhosphoGAT
-from phospholite.ml import get_dataloader_split
-from phospholite.ml.dataset import PhosphositeGraphDataset 
-from phospholite.utils.io import load_index_dict
-from phospholite import INDEX_DICT_PATH
-
-
-
-dataset_root_dir =  DATASET_DIR / "protein_graph_dataset"
-
-
-"""Set random seed"""
-torch.manual_seed(0) 
-np.random.seed(0)
-
-
-
-
-
-# TODO: 
-# - run with 3 diff seeds to provide uncertainty estimates
 
 
 @ck.command()
@@ -53,7 +18,7 @@ np.random.seed(0)
     "-s",
     # TODO: 
     # for now use str representation of path. 
-    default=str(dataset_root_dir),
+    default=None,
     help="Root directory for data.",
 )
 @ck.option(
@@ -74,14 +39,7 @@ def main(
     )
 
 
-import glob
-from tqdm import tqdm
-from typing import List, Optional, Union, Tuple, Dict, Any
 
-import glob
-from tqdm import tqdm
-from typing import List, Optional, Union, Tuple, Dict, Any
-import torch_geometric
 
 def add_labels_to_dataset(
     from_dir: Path,
