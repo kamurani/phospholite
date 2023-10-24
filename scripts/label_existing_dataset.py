@@ -10,37 +10,6 @@ from typing import Dict, List, Union, Any, Optional, Tuple, Callable
 from pathlib import Path
 from tqdm import tqdm
 
-
-
-@ck.command()
-@ck.option(
-    "--source",
-    "-s",
-    # TODO: 
-    # for now use str representation of path. 
-    default=None,
-    help="Root directory for data.",
-)
-@ck.option(
-    "--dest",
-    "-d",
-    help="Directory to contain labelled dataset.",
-)
-def main(
-    source: str,
-    dest: str = None,
-):
-    """Label an existing dataset with a dictionary of labels."""
-    if dest is None:
-        dest = source
-    add_labels_to_dataset(
-        from_dir=Path(source),
-        to_dir=Path(dest),
-    )
-
-
-
-
 def add_labels_to_dataset(
     from_dir: Path,
     to_dir: Path,
@@ -90,3 +59,36 @@ def add_labels_to_dataset(
         data.y_index    = indexes_dict[uniprot_id]["idx"]
             
         torch.save(data, outfile)
+
+
+@ck.command()
+@ck.option(
+    "--source",
+    "-s",
+    # TODO: 
+    # for now use str representation of path. 
+    default=None,
+    help="Root directory for data.",
+)
+@ck.option(
+    "--dest",
+    "-d",
+    help="Directory to contain labelled dataset.",
+)
+def main(
+    source: str,
+    dest: str = None,
+):
+    """Label an existing dataset with a dictionary of labels."""
+    if dest is None:
+        dest = source
+    add_labels_to_dataset(
+        from_dir=Path(source),
+        to_dir=Path(dest),
+    )
+
+if __name__ == "__main__":
+    main()
+
+
+
