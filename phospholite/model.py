@@ -58,7 +58,7 @@ class PhosphoGAT(pl.LightningModule):
 
         prog_bar: bool = True,
 
-        classifier_size: int = 512, 
+        classifier_size: int = 4096, 
 
     ) -> None:
         super().__init__()
