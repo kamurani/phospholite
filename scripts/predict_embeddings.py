@@ -80,7 +80,7 @@ def main(
 
     model_dir = checkpoint.parent 
     name = checkpoint.stem
-    filepath = model_dir / f"{name}_embeddings.tsv")
+    filepath = model_dir / f"{name}_embeddings.tsv"
     df.to_csv(filepath, sep="\t", index=False)
 
 if __name__ == "__main__":
