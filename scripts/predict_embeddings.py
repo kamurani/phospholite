@@ -17,6 +17,8 @@ from phospholite.model import PhosphoGAT
 from phospholite import INDEX_DICT_PATH
 from phospholite.utils.io import load_index_dict
 
+from phospholite import DATASET_DIR
+
 
 
 
