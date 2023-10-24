@@ -69,9 +69,9 @@ def main(
         #uniprot_ids=uniprot_ids,
         pre_labelled=True,
     )
-    batch_size = 2
+    batch_size = 256
     from torch_geometric.loader import DataLoader
-    dl = DataLoader(ds[0:4], batch_size=batch_size) # for testing
+    dl = DataLoader(ds, batch_size=batch_size) # for testing
 
     import pytorch_lightning as pl
     trainer = pl.Trainer()
