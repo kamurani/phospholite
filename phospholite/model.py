@@ -60,6 +60,8 @@ class PhosphoGAT(pl.LightningModule):
 
         classifier_size: int = 4096, 
 
+        get_embeddings: bool = False,
+
     ) -> None:
         super().__init__()
         self.learning_rate = learning_rate
@@ -72,6 +74,8 @@ class PhosphoGAT(pl.LightningModule):
         self.test_dataset = test_dataset
 
         self.out_heads = 1 
+
+        self.get_embeddings = get_embeddings
 
         self.loss_func = loss_func
         self.accuracy = accuracy
@@ -173,6 +177,10 @@ class PhosphoGAT(pl.LightningModule):
         #pooled = global_add_pool(x, batch)
        
         # Apply fully connected layers to each node
+
+        if self.get_embeddings:
+            return x
+
         x = self.classifier(x)
         return x
     
@@ -301,7 +309,52 @@ class PhosphoGAT(pl.LightningModule):
 
         
     def predict_step(self, batch, batch_idx, dataloader_idx=0):
+        y       = batch.y 
+        y_index = batch.y_index
+        y_index = y_index.to(torch.long)
+        y_index = torch.flatten(y_index)
+        # ! DIFFERENT BATCH_IDX TO UNUSED ONE IN FUNCTION PARAMETERS
+        batch_idx = batch.batch 
+        batch_idx = batch_idx[y_index]          # Select the batch_idx for each y value (indexing with `y_index`)
 
+        names = batch.name
+        if isinstance(names, torch.Tensor):
+            # detach 
+            ids = names.detach().cpu().numpy()
+            uniprot_ids = ids[batch_idx].tolist()
+        elif isinstance(names, list):
+            ids = np.array(names)
+            batch_idx = batch_idx.detach().cpu().numpy()
+            uniprot_ids = ids[batch_idx].tolist()
+        else: 
+            raise ValueError(f"batch.name is of type {type(batch.name)}") 
+        
+
+        if self.get_embeddings:
+            
+            
+            
+            embeddings   = self(batch).detach().cpu().numpy()
+            
+
+            embeddings = embeddings[y_index]
+
+            node_id_flat = np.array([item for sublist in batch.node_id for item in sublist], dtype=str)
+            node_ids = node_id_flat[y_index].tolist()
+
+            y_values = y.flatten().tolist()
+
+            # Should we get y_hat in same process? Or rely on join later ...
+            # TODO
+            return list(zip(uniprot_ids, node_ids, y_values, embeddings))
+            
+
+
+
+
+
+            
+        
         x = batch 
         y_sparse = x.y 
         y_index = x.y_index
@@ -322,20 +375,8 @@ class PhosphoGAT(pl.LightningModule):
         """Index with batch idx and selected y values
         """
         
-        batch_idx = batch.batch 
-        batch_idx = batch_idx[y_index]          # Select the batch_idx for each y value (indexing with `y_index`)
-
-        names = batch.name
-        if isinstance(names, torch.Tensor):
-            # detach 
-            ids = names.detach().cpu().numpy()
-            uniprot_ids = ids[batch_idx].tolist()
-        elif isinstance(names, list):
-            ids = np.array(names)
-            batch_idx = batch_idx.detach().cpu().numpy()
-            uniprot_ids = ids[batch_idx].tolist()
-        else: 
-            raise ValueError(f"batch.name is of type {type(batch.name)}") 
+        
+        
         
         y_index = y_index.detach().cpu().numpy()
 

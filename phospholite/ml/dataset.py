@@ -264,8 +264,9 @@ class PhosphositeGraphDataset(Dataset):
         assert isinstance(data, Data), f"{uniprot_id}: Data is not a PyTorch Geometric Data object. Got {type(data)}."
         assert uniprot_id == data.name, f"Uniprot ID '{uniprot_id}' does not match data.name '{data.name}' at index {idx}."
         
-        data.y_index    = self.y_label_map[uniprot_id]["idx"]
-        data.y          = self.y_label_map[uniprot_id]["y"]
+        if self.y_label_map is not None:
+            data.y_index    = self.y_label_map[uniprot_id]["idx"]
+            data.y          = self.y_label_map[uniprot_id]["y"]
 
         #data.phosphosite_index = torch.tensor(site_indexes, dtype=torch.long)
         # NOTE: not necessary to store any extra information.
