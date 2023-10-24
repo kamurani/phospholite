@@ -47,7 +47,6 @@ def main(
     checkpoint = Path(source)
 
     kwargs = dict(
-        classifier_size=512,
         get_embeddings=True,
     )
 
