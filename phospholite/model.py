@@ -336,6 +336,7 @@ class PhosphoGAT(pl.LightningModule):
             
             embeddings   = self(batch).detach().cpu().numpy()
             
+            y_index = y_index.detach().cpu().numpy()
 
             embeddings = embeddings[y_index]
 
