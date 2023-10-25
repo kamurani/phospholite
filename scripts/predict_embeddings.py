@@ -36,9 +36,16 @@ from phospholite import DATASET_DIR
     default=DATASET_DIR / "protein_graph_dataset",
     help="Root directory for dataset.",
 )
+@ck.option(
+    "--embeddings/--no-embeddings",
+    default=True,
+    help="Whether to extract embeddings from model.",
+
+)
 def main(
     source: str,
     root_dir: str,
+    embeddings: bool = True,
 ):
     # Extract embeddings from model (Gat2? )
 
@@ -47,7 +54,7 @@ def main(
     checkpoint = Path(source)
 
     kwargs = dict(
-        get_embeddings=True,
+        get_embeddings=embeddings,
     )
 
     # Check if GPU 
@@ -81,20 +88,25 @@ def main(
     from phospholite.utils import flatten_predictions
     output = flatten_predictions(output)
 
-
-    emb_array = np.array([o[-1] for o in output])
-
     from phospholite.utils import generate_output_dataframe
+    if embeddings:
 
-    df = generate_output_dataframe(output, columns=["uniprot_id", "site", "label", "embedding"])
+        emb_array = np.array([o[-1] for o in output])
+        df = generate_output_dataframe(output, columns=["uniprot_id", "site", "label", "embedding"])
+        model_dir = checkpoint.parent 
+        name = checkpoint.stem
+        filepath = model_dir / f"{name}_embedding_data.tsv"
+        df.to_csv(filepath, sep="\t", index=False)
 
-    model_dir = checkpoint.parent 
-    name = checkpoint.stem
-    filepath = model_dir / f"{name}_embedding_data.tsv"
-    df.to_csv(filepath, sep="\t", index=False)
+        filepath = model_dir / f"{name}_embedding_array.npy"
+        np.save(filepath, emb_array)
+    else: 
+        df = generate_output_dataframe(output)
+        model_dir = checkpoint.parent
+        filepath = model_dir / f"{name}_predictions_all.tsv"
+        df.to_csv(filepath, sep="\t", index=False)
 
-    filepath = model_dir / f"{name}_embedding_array.npy"
-    np.save(filepath, emb_array)
+    
 
 
 if __name__ == "__main__":
