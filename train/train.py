@@ -227,6 +227,7 @@ def main(
 
         # ADDED ##########
         output = data1[i]
+        from phospholite.utils import flatten_predictions
         output = flatten_predictions(output)
 
         df = generate_output_dataframe(output)
