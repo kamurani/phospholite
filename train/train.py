@@ -108,6 +108,11 @@ np.random.seed(0)
     default=32,
     help="Batch size.",
 )
+@ck.option(
+    "--first-n",
+    default=None,
+    help="First n proteins to train on.",
+)
 def main(
     root_dir: str = "",
     model_dir: str = "",
@@ -118,6 +123,7 @@ def main(
     verbose: bool = False,
     num_workers: int = 0,
     batch_size: int = 32,
+
 ):
     root_dir = Path(root_dir)
     model_dir = Path(model_dir)
@@ -149,6 +155,9 @@ def main(
         index_dict_path=INDEX_DICT_PATH,
         verbose=verbose,
     )
+    if first_n is not None:
+        ds = ds[:first_n]
+        if verbose: print(f"Using first {first_n} proteins.")
     if verbose: print(ds)
 
     train_loader, valid_loader, test_loader = get_dataloader_split(
@@ -242,6 +251,47 @@ def main(
         #filepath = model_dir / f"phosphosite_predictions_{name}.csv"
         
         #output_df.to_csv(filepath, index=False, sep="\t")
+    
+    """Save embeddings."""
+    ###########################################################
+    batch_size = 256
+    from torch_geometric.loader import DataLoader
+    dl = DataLoader(ds, batch_size=batch_size) # for testing
+
+    # Load model again 
+    # checkpoint = model_dir / "best.ckpt"
+    kwargs = dict(
+        get_embeddings=True,
+    )
+    # Check if GPU 
+    kwargs["map_location"] = None if torch.cuda.is_available() else torch.device('cpu')
+    
+    import pytorch_lightning as pl
+    #trainer = pl.Trainer()
+
+    # Make sure the `predict_step` will return embeddings by setting the param in the model internally.
+    model.get_embeddings = True
+
+    output = trainer.predict(
+        model=model,
+        dataloaders=dl,
+        ckpt_path="best" if not dev else None,
+    )
+    from phospholite.utils import flatten_predictions
+    output = flatten_predictions(output)
+
+    generate_embeddings = True 
+    if generate_embeddings:
+
+        emb_array = np.array([o[-1] for o in output])
+        df = generate_output_dataframe(output, columns=["uniprot_id", "site", "label", "embedding"])
+        model_dir = checkpoint.parent 
+        name = checkpoint.stem
+        filepath = model_dir / f"{name}_embedding_data.tsv"
+        df.to_csv(filepath, sep="\t", index=False)
+
+        filepath = model_dir / f"{name}_embedding_array.npy"
+        np.save(filepath, emb_array)
 
     print("Done.")
     # TODO
