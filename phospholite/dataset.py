@@ -19,6 +19,7 @@ def get_dataset(
     verbose: bool = True, 
     uniprot_ids: List[str] = None,
     pre_labelled: bool = False, # Switch this to True if we want to avoid labelling the dataset on the fly. 
+    first_n: int = None, 
 ): 
 
     if index_dict is None: 
@@ -87,6 +88,8 @@ def get_dataset(
         pre_transform=None, # before saved to disk , after PyG conversion 
         pre_filter=None,    # whether it will be in final dataset
     )
+    if first_n is not None:
+        uniprot_ids_to_use = uniprot_ids_to_use[:first_n]
     ds = PhosphositeGraphDataset(
         uniprot_ids=uniprot_ids_to_use,
         y_label_map=index_dict if not pre_labelled else None,

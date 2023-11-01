@@ -154,9 +154,9 @@ def main(
         root_dir=root_dir,
         index_dict_path=INDEX_DICT_PATH,
         verbose=verbose,
+        first_n=first_n,
     )
     if first_n is not None:
-        ds = ds[:first_n]
         if verbose: print(f"Using first {first_n} proteins.")
     if verbose: print(ds)
 
