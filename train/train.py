@@ -34,6 +34,7 @@ from phospholite.model import PhosphoGAT
 from phospholite.ml import get_dataloader_split
 from phospholite.ml.dataset import PhosphositeGraphDataset 
 from phospholite.utils.io import load_index_dict
+from phospholite.utils import generate_output_dataframe
 from phospholite import INDEX_DICT_PATH
 
 
@@ -101,6 +102,12 @@ np.random.seed(0)
     default=0,
     help="Number of workers to use for dataloader.",
 )
+@ck.option(
+    "--batch-size",
+    "-b",
+    default=32,
+    help="Batch size.",
+)
 def main(
     root_dir: str = "",
     model_dir: str = "",
@@ -110,6 +117,7 @@ def main(
     dryrun: bool = False,
     verbose: bool = False,
     num_workers: int = 0,
+    batch_size: int = 32,
 ):
     root_dir = Path(root_dir)
     model_dir = Path(model_dir)
@@ -135,79 +143,16 @@ def main(
     - load graph construction functions etc.
     
     """
-    from graphein.protein.config import ProteinGraphConfig
-    from graphein.protein.edges.distance import add_distance_threshold
-    from functools import partial
-
-    long_interaction_threshold = 5 # seq positions 
-    edge_threshold_distance = 6.0 # Å
-    new_edge_funcs = {"edge_construction_functions": [
-        partial(
-        add_distance_threshold, long_interaction_threshold=long_interaction_threshold, threshold=edge_threshold_distance)
-    ]}
-    config = ProteinGraphConfig(
-        granularity="CA",
-        **new_edge_funcs,
-    )
-    from graphein.ml.conversion import GraphFormatConvertor
-
-    columns = [
-        "b_factor",
-        "name",
-        "edge_index",
-        "x", # T5 per-residue embedding
-    ]
-    convertor = GraphFormatConvertor(
-        src_format="nx", dst_format="pyg", verbose="gnn",
-        columns=columns,
-    )
-
-    # List of functions that consume a nx.Graph and return a nx.Graph. Applied to graphs after construction but before conversion to pyg
-    #from phosphosite.graphs.pyg import add_per_residue_embedding
-    graph_transforms = [
-        #add_per_residue_embedding,
-    ]
-
-    """
-    Create dataset.
-    """
-    # Load in the actual dataset (i.e. processed filenames)
-    
-    processed_filenames = [Path(a).stem for a in glob.glob(str(root_dir / "processed" / "*.pt"))]
-    if verbose: print(f"Using {len(processed_filenames)} processed files.")
-
-
-    with open(DATASET_DIR / "naked_proteins.txt", "r") as f:
-        naked_proteins = f.read().splitlines()
-        if verbose: print(f"Ignoring {len(naked_proteins)} naked proteins.")
-
-    indexes_dict = load_index_dict(filepath=INDEX_DICT_PATH)
-
-
-    kwargs = dict(
-        root=root_dir,
-        graphein_config=config, 
-        graph_transformation_funcs=graph_transforms,
-        graph_format_convertor=convertor,
-        pre_transform=None, # before saved to disk , after PyG conversion 
-        pre_filter=None,    # whether it will be in final dataset
-    )
-    uniprot_ids_to_use = processed_filenames
-    uniprot_ids_to_use = [u for u in processed_filenames if u in indexes_dict.keys()]
-
-    # Filter naked proteins (i.e. no sites on them)
-    uniprot_ids_to_use = [u for u in uniprot_ids_to_use if u not in naked_proteins]
-    
-    if verbose: print(f"Using {len(uniprot_ids_to_use)} uniprot ids.")
-    ds = PhosphositeGraphDataset(
-        uniprot_ids=uniprot_ids_to_use,
-        y_label_map=indexes_dict,
-        **kwargs,
+    from phospholite.dataset import get_dataset
+    ds = get_dataset(
+        root_dir=root_dir,
+        index_dict_path=INDEX_DICT_PATH,
+        verbose=verbose,
     )
     if verbose: print(ds)
 
     train_loader, valid_loader, test_loader = get_dataloader_split(
-        ds, batch_size=32, train_batch_size=32,
+        ds, batch_size=batch_size, train_batch_size=batch_size,
         #num_workers=num_workers,
     )
     if verbose: print(train_loader, valid_loader, test_loader)
@@ -271,34 +216,37 @@ def main(
             ckpt_path="best",
         )
     
+    
     # Data1 should be a `list` of `dict` objects for each dataloader. 
     # For now, assume we've passed just ONE dataloader. 
 
     """Save predictions."""
-
     for i, name in enumerate(["train", "valid", "test"]):
         #print(f"data1[{i}]: {data1[i]}")
-        output_df = generate_output_dataframe(data1[i][0])
-        filepath = model_dir / f"phosphosite_predictions_{name}.csv"
+        #output_df = generate_output_dataframe(data1[i][0])
+
+        # ADDED ##########
+        output = data1[i]
+        output = flatten_predictions(output)
+
+        df = generate_output_dataframe(output)
+        #model_dir = checkpoint.parent
+        filepath = model_dir / f"{name}_predictions_all.tsv"
         if verbose: print(f"Saving to {filepath} ...")
-        output_df.to_csv(filepath, index=False, sep="\t")
+        df.to_csv(filepath, sep="\t", index=False)
+
+        ##################
+
+
+        #filepath = model_dir / f"phosphosite_predictions_{name}.csv"
+        
+        #output_df.to_csv(filepath, index=False, sep="\t")
 
     print("Done.")
     # TODO
 
         
-def generate_output_dataframe(
-    data, 
-    columns: List[str] = [
-        "uniprot_id",
-        "node_id",
-        "y",
-        "prediction",
-        "y_hat",
-    ],
-):
-    df = pd.DataFrame(data, columns=columns)
-    return df
+
 
 
 if __name__ == "__main__":
