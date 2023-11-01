@@ -283,12 +283,12 @@ def main(
     output = flatten_predictions(output)
 
     generate_embeddings = True 
+    name = "phosphogat"
     if generate_embeddings:
 
         emb_array = np.array([o[-1] for o in output])
         df = generate_output_dataframe(output, columns=["uniprot_id", "site", "label", "embedding"])
-        model_dir = checkpoint.parent 
-        name = checkpoint.stem
+
         filepath = model_dir / f"{name}_embedding_data.tsv"
         df.to_csv(filepath, sep="\t", index=False)
 
