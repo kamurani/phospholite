@@ -125,8 +125,9 @@ def main(
     batch_size: int = 32,
     first_n: int = None, 
 ):
-    first_n = int(first_n)
+    
     if first_n is not None:
+        first_n = int(first_n)
         if verbose: print(f"Using first {first_n} proteins.")
     root_dir = Path(root_dir)
     model_dir = Path(model_dir)
