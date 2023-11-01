@@ -123,7 +123,7 @@ def main(
     verbose: bool = False,
     num_workers: int = 0,
     batch_size: int = 32,
-
+    first_n: int = None, 
 ):
     root_dir = Path(root_dir)
     model_dir = Path(model_dir)
