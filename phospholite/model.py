@@ -154,6 +154,7 @@ class PhosphoGAT(pl.LightningModule):
     def forward(
         self, 
         protein_data, 
+        get_embeddings: bool = False,
 
     ) -> torch.Tensor:
         """Forward pass of the model.
@@ -178,7 +179,7 @@ class PhosphoGAT(pl.LightningModule):
        
         # Apply fully connected layers to each node
 
-        if self.get_embeddings:
+        if get_embeddings or self.get_embeddings:
             return x
 
         x = self.classifier(x)
@@ -331,6 +332,7 @@ class PhosphoGAT(pl.LightningModule):
         
 
         if self.get_embeddings:
+            
             
             
             embeddings   = self(batch).detach().cpu().numpy()
