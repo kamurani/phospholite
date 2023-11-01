@@ -125,6 +125,8 @@ def main(
     batch_size: int = 32,
     first_n: int = None, 
 ):
+    if first_n is not None:
+        if verbose: print(f"Using first {first_n} proteins.")
     root_dir = Path(root_dir)
     model_dir = Path(model_dir)
     if verbose: 
@@ -156,8 +158,7 @@ def main(
         verbose=verbose,
         first_n=first_n,
     )
-    if first_n is not None:
-        if verbose: print(f"Using first {first_n} proteins.")
+    
     if verbose: print(ds)
 
     train_loader, valid_loader, test_loader = get_dataloader_split(
